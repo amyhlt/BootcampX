@@ -13,8 +13,13 @@ client.connect()
 .catch(err => console.error('db connection error', err.stack));
 
 //excute queries
-const args=process.argv.slice(2);
-client.query(`
+//commend-line
+const cohortName = process.argv[2];
+
+// Store all potentially malicious values in an array.
+const values = [`${cohortName || 'JUL02'}`];
+
+const queryString =`
 select DISTINCT teachers.name as teacher,   teacherCohort.name as cohort
 FROM teachers 
 JOIN
@@ -22,11 +27,13 @@ JOIN
 FROM assistance_requests
 JOIN students ON assistance_requests.student_id=students.id
 JOIN cohorts ON cohorts.id= students.cohort_id
-where cohorts.name ='${args[0] || 'JUL02'}'
+where cohorts.name =$1
 GROUP by assistance_requests.teacher_id,cohorts.name) AS teacherCohort
 ON teacherCohort.teacher_id=teachers.id
 ORDER BY teachers.name;
-`)
+`
+
+client.query(queryString,values)
 .then(res => {
     console.log(res);
   res.rows.forEach(user => {
